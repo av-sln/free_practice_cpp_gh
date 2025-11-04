@@ -11,11 +11,11 @@
 std::vector<std::string> split(const std::string& string, char delimiter) {
    std::vector<std::string> delString;
    std::string::size_type start{0};
-   std::string::size_type stop{string.find_first_of(delimiter)};
+   std::string::size_type stop{string.find(delimiter)};
    while (stop != std::string::npos) {
       delString.push_back(string.substr(start, stop - start));
       start = stop + 1;
-      stop = string.find_first_of(delimiter, start);
+      stop = string.find(delimiter, start);
    }
    delString.push_back(string.substr(start));
    return delString;
@@ -41,9 +41,6 @@ int main(int argc, char const *argv[]) {
       }
    }
 
-   // Выводим на печать не сортированный список ip-адресов
-   DisplayIP(ipPool);
-
    // Обратная лексикографическая сортировка
    // Определяем именованную лямбду
    auto compareIP = [](const std::vector<std::string>& ip1,
@@ -60,18 +57,13 @@ int main(int argc, char const *argv[]) {
    // С помощью алгоритма сортировки сортируем ip-адреса
    std::ranges::sort(ipPool, compareIP);
    // Отображаем отсортированный список ip-адресов
-   std::cout << "----------Displaying the list of IP-addresses----------\n";
    DisplayIP(ipPool);
 
    // Фильтрация первому байту
-   auto filterOne = [](const std::vector<std::string>& ip) {
-      return ip[0] == "1";
-   };
    std::vector<std::vector<std::string>> temp{};
-   std::copy_if(ipPool.cbegin(), ipPool.cend(), std::back_inserter(temp),
-      filterOne);
+   std::ranges::copy_if(ipPool, std::back_inserter(temp), 
+      [](const std::vector<std::string>& ip){return ip[0] == "1";});
    // Отображаем выбранный список
-   std::cout << "----------Displaying first byte filter list----------\n";
    DisplayIP(temp);
 
    // Фильтрация по первому и второму байтам
@@ -80,20 +72,18 @@ int main(int argc, char const *argv[]) {
       return (ip[0] == "46" && ip[1] == "70");
    };
    temp.clear();
-   std::copy_if(ipPool.cbegin(), ipPool.cend(), std::back_inserter(temp),
-      filterOneTwo);
+   std::ranges::copy_if(ipPool, std::back_inserter(temp), filterOneTwo);
    // Отображаем отфильтрованный список
-   std::cout << "----------Display one and two bytes filter----------\n";
    DisplayIP(temp);
 
    // Фильтрация списка по любому байту, который равен 46
+   auto anyByteFilter = [](const std::vector<std::string>& ip) {
+      return (ip[0] == "46" || ip[1] == "46" 
+            || ip[2] == "46" || ip[3] == "46");
+   };
    temp.clear();
    std::string anyByte{"46"};
-   std::copy_if(ipPool.cbegin(), ipPool.cend(), std::back_inserter(temp),
-      [anyByte](const std::vector<std::string>& ip)
-      {return (ip[0] == anyByte or ip[1] == anyByte 
-         or ip[2] == anyByte or ip[3] == anyByte);});
+   std::ranges::copy_if(ipPool, std::back_inserter(temp), anyByteFilter);
    // Отображаем отфильтрованный список
-   std::cout << "----------Displaying any byte filtering----------\n";
    DisplayIP(temp);
 }   
