@@ -41,6 +41,19 @@ int main(int argc, char const *argv[]) {
       }
    }
 
+   // Проверяем исходный вектор на корректность ip-адресов
+   // если ip-адрес не корректен удаляем его из списка
+   auto correctIPfilter = [](std::vector<std::string>& ipLines) {
+      for (const auto& octet : ipLines) {
+            if (!(std::stoi(octet) >= 0 && std::stoi(octet) <= 255)) {
+               return true;
+            }
+      }
+      return false;      
+   };
+   std::erase_if(ipPool, correctIPfilter);
+   DisplayIP(ipPool);
+
    // Обратная лексикографическая сортировка
    // Определяем именованную лямбду
    auto compareIP = [](const std::vector<std::string>& ip1,
@@ -86,4 +99,4 @@ int main(int argc, char const *argv[]) {
    std::ranges::copy_if(ipPool, std::back_inserter(temp), anyByteFilter);
    // Отображаем отфильтрованный список
    DisplayIP(temp);
-}   
+}
