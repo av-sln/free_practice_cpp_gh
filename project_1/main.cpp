@@ -13,11 +13,11 @@ std::vector<std::string> split(const std::string& string, char delimiter) {
    std::string::size_type start{0};
    std::string::size_type stop{string.find(delimiter)};
    while (stop != std::string::npos) {
-      delString.push_back(string.substr(start, stop - start));
+      delString.emplace_back(string.substr(start, stop - start));
       start = stop + 1;
       stop = string.find(delimiter, start);
    }
-   delString.push_back(string.substr(start));
+   delString.emplace_back(string.substr(start));
    return delString;
 }
 
@@ -35,7 +35,7 @@ void DisplayIP(std::vector<std::vector<std::string>>& ipPoolRef) {
 int main(int argc, char const *argv[]) {
    std::vector<std::vector<std::string>> ipPool{};
    for (std::string line; std::cin >> line;) {
-      ipPool.push_back(split(line, '.'));
+      ipPool.emplace_back(split(line, '.'));
       while (std::cin.get() != '\n') {
          continue;
       }
@@ -43,7 +43,7 @@ int main(int argc, char const *argv[]) {
 
    // Проверяем исходный вектор на корректность ip-адресов
    // если ip-адрес не корректен удаляем его из списка
-   auto correctIPfilter = [](std::vector<std::string>& ipLines) {
+   auto IPCheck = [](std::vector<std::string>& ipLines) {
       for (const auto& octet : ipLines) {
             if (!(std::stoi(octet) >= 0 && std::stoi(octet) <= 255)) {
                return true;
@@ -51,7 +51,7 @@ int main(int argc, char const *argv[]) {
       }
       return false;      
    };
-   std::erase_if(ipPool, correctIPfilter);
+   std::erase_if(ipPool, IPCheck);
    DisplayIP(ipPool);
 
    // Обратная лексикографическая сортировка
