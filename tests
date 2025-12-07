@@ -1,0 +1,145 @@
+#include <gtest/gtest.h>
+#include "functions.cpp" // Импортируем наши функции и лямбды
+
+
+
+// Тесты для функции split
+TEST(SplitTest, EmptyString)
+{
+   std::string input{};
+   std::vector<std::string> expected{};
+   std::vector<std::string> actual{split(input, '.')};
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(SplitTest, SplitByDelimiter)
+{
+   std::string input = "192.168.1.1";
+   std::vector<std::string> expected = {"192", "168", "1", "1"};
+   std::vector<std::string> actual = split(input, '.');
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(SplitTest, SplitByDelimiterFirstDot)
+{
+   std::string input{".192.168.1.1"};
+   std::vector<std::string> expected{"", "192", "168", "1", "1"};
+   std::vector<std::string> actual{split(input, '.')};
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(SplitTest, SplitByDelimiterMidDot)
+{
+   std::string input{"192.168..1.1"};
+   std::vector<std::string> expected{"192", "168", "", "1", "1"};
+   std::vector<std::string> actual{split(input, '.')};
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(SplitTest, SplitByDelimiterEndDot)
+{
+   std::string input{"192.168.1.1."};
+   std::vector<std::string> expected{"192", "168", "1", "1", ""};
+   std::vector<std::string> actual{split(input, '.')};
+   ASSERT_EQ(expected, actual);
+}
+
+// Тесты для функции invalidIP
+TEST(InvalidIPTest, CorrectIP)
+{
+   std::vector<std::string> ip = {"192", "168", "1", "1"};
+   bool expected = false; // правильный IP не удаляется
+   bool actual = invalidIP(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(InvalidIPTest, IncorrectOctetCount)
+{
+   std::vector<std::string> ip = {"192", "168", "1"};
+   bool expected = true; // неправильный IP удаляется
+   bool actual = invalidIP(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(InvalidIPTest, OutOfRange)
+{
+   std::vector<std::string> ip = {"192", "168", "1", "256"};
+   bool expected = true; // неправильно, потому что последний октет вне диапазона
+   bool actual = invalidIP(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(InvalidIPTest, negativeValue)
+{
+   std::vector<std::string> ip{"-1", "168", "1", "240"};
+   bool expected{true}; // неправльно, первый октет отрицательный
+   bool actual{invalidIP(ip)};
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(InvalidIPTest, charValue)
+{
+   std::vector<std::string> ip{"192", "f", "1", "245"};
+   bool expected{true}; // неправильно, второй октет не цифра
+   bool actual{invalidIP(ip)};
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(InvalidIPTest, symbolValue)
+{
+   std::vector<std::string> ip{"192", "168", "*", "245"};
+   bool expected{true}; // неправильно, третий октет символ
+   bool actual{invalidIP(ip)};
+   ASSERT_EQ(expected, actual);
+}
+
+// Тесты для функции compareIP
+TEST(CompareIPTest, ReverseLexicographicSort)
+{
+   std::vector<std::string> ip1 = {"192", "168", "1", "2"};
+   std::vector<std::string> ip2 = {"192", "168", "1", "1"};
+   bool expected = true; // ip1 > ip2
+   bool actual = compareIP(ip1, ip2);
+   ASSERT_EQ(expected, actual);
+}
+
+// Тесты для фильтра first two bytes
+TEST(FilterOneTwoTest, MatchBothBytes)
+{
+   std::vector<std::string> ip = {"46", "70", "1", "1"};
+   bool expected = true; // подходит под фильтр
+   bool actual = filterOneTwo(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(FilterOneTwoTest, FailBothBytes)
+{
+   std::vector<std::string> ip = {"192", "168", "1", "1"};
+   bool expected = false; // не подходит под фильтр
+   bool actual = filterOneTwo(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+// Тесты для фильтра any byte equals 46
+TEST(AnyByteFilterTest, ByteMatches)
+{
+   std::vector<std::string> ip = {"192", "46", "1", "1"};
+   bool expected = true; // подходит под фильтр
+   bool actual = anyByteFilter(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+TEST(AnyByteFilterTest, NoMatchingByte)
+{
+   std::vector<std::string> ip = {"192", "168", "1", "1"};
+   bool expected = false; // не подходит под фильтр
+   bool actual = anyByteFilter(ip);
+   ASSERT_EQ(expected, actual);
+}
+
+// Главная точка входа для запуска тестов
+int main(int argc, char **argv)
+{
+   ::testing::InitGoogleTest(&argc, argv);
+   return RUN_ALL_TESTS();
+}

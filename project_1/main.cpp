@@ -1,17 +1,20 @@
 // main.cpp
-// Файл исходного кода фильтрации ip-адресов
+// Файл исходного кода обработки ip-адресов
 
 #include <iostream>
 #include <vector>
 #include <string>
 #include <ranges>
 #include <algorithm>
+#include <cctype>
 
 // Функция разбивает строку по разделителю
-std::vector<std::string> split(const std::string& string, char delimiter) {
-   std::vector<std::string> delString;
-   std::string::size_type start{0};
-   std::string::size_type stop{string.find(delimiter)};
+// Здесь возвращаемое значение std::vector<std::string>
+auto split(const std::string& string, char delimiter) {
+   std::vector<std::string> delString{};
+   if (string == "") return delString;
+   std::size_t start{0};   // Стартовая позиция
+   std::size_t stop{string.find(delimiter)}; // Позиция останова
    while (stop != std::string::npos) {
       delString.emplace_back(string.substr(start, stop - start));
       start = stop + 1;
@@ -23,7 +26,7 @@ std::vector<std::string> split(const std::string& string, char delimiter) {
 
 // Функция отображает список IP-адресов
 // Один адрес в одной строке
-void DisplayIP(std::vector<std::vector<std::string>>& ipPoolRef) {
+void displayIP(const std::vector<std::vector<std::string>>& ipPoolRef) {
    for (const auto& addressLine : ipPoolRef) {
       for (const auto& address : addressLine) {
          std::cout << address << '.';
@@ -32,7 +35,7 @@ void DisplayIP(std::vector<std::vector<std::string>>& ipPoolRef) {
    }
 }
 
-int main(int argc, char const *argv[]) {
+int main() {
    std::vector<std::vector<std::string>> ipPool{};
    for (std::string line; std::cin >> line;) {
       ipPool.emplace_back(split(line, '.'));
@@ -43,17 +46,20 @@ int main(int argc, char const *argv[]) {
 
    // Проверяем исходный вектор на корректность ip-адресов
    // если ip-адрес не корректен удаляем его из списка
-   auto IPCheck = [](std::vector<std::string>& ipLines) {
+   auto invalidIP = [](const std::vector<std::string>& ipLines) {
+      // Проверяем количество октетов
+      if (ipLines.size() != 4) return true;
+      //Проверяем каждый октет на содержание только цифр
       for (const auto& octet : ipLines) {
-            if (!(std::stoi(octet) >= 0 && std::stoi(octet) <= 255)) {
-               return true;
-            }
-      }
-      return false;      
+         if (std::ranges::any_of(octet, 
+            [](char ch){return !std::isdigit(ch);})) return true;
+         // Проверка октетов на соответствие диапазону [0-255]
+         if (std::stoi(octet) < 0 || std::stoi(octet) > 255) return true;
+      }  
+      return false;         
    };
-   std::erase_if(ipPool, IPCheck);
-   DisplayIP(ipPool);
-
+   std::erase_if(ipPool, invalidIP);
+   
    // Обратная лексикографическая сортировка
    // Определяем именованную лямбду
    auto compareIP = [](const std::vector<std::string>& ip1,
@@ -70,14 +76,14 @@ int main(int argc, char const *argv[]) {
    // С помощью алгоритма сортировки сортируем ip-адреса
    std::ranges::sort(ipPool, compareIP);
    // Отображаем отсортированный список ip-адресов
-   DisplayIP(ipPool);
+   displayIP(ipPool);
 
    // Фильтрация первому байту
    std::vector<std::vector<std::string>> temp{};
    std::ranges::copy_if(ipPool, std::back_inserter(temp), 
       [](const std::vector<std::string>& ip){return ip[0] == "1";});
    // Отображаем выбранный список
-   DisplayIP(temp);
+   displayIP(temp);
 
    // Фильтрация по первому и второму байтам
    // Первый байт = 46, второй байт = 70
@@ -87,7 +93,7 @@ int main(int argc, char const *argv[]) {
    temp.clear();
    std::ranges::copy_if(ipPool, std::back_inserter(temp), filterOneTwo);
    // Отображаем отфильтрованный список
-   DisplayIP(temp);
+   displayIP(temp);
 
    // Фильтрация списка по любому байту, который равен 46
    auto anyByteFilter = [](const std::vector<std::string>& ip) {
@@ -98,5 +104,5 @@ int main(int argc, char const *argv[]) {
    std::string anyByte{"46"};
    std::ranges::copy_if(ipPool, std::back_inserter(temp), anyByteFilter);
    // Отображаем отфильтрованный список
-   DisplayIP(temp);
+   displayIP(temp);
 }
