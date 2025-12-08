@@ -61,3 +61,5 @@ $ ./tests
 $ g++ -Wall -std=c++20 main.cpp
 $ ./a.out < ip_filter.tsv
 ```
+Видео разбор по ссылке:  
+<https://vkvideo.ru/video-230024298_456239103>
