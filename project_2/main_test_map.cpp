@@ -5,6 +5,9 @@
 #include <format>
 #include "cust_alloc.hpp"
 
+// Мксимальное количество элементов в контейнере
+constexpr std::size_t N = 10;
+
 int factorial(int n) {
    int result{1};
    for (int i{2}; i <= n; ++i) {
@@ -15,8 +18,7 @@ int factorial(int n) {
 
 int main() {
    using namespace std::chrono;
-   constexpr std::size_t N = 10; // Максиальное количество элементов контейнера
-
+   
    // Заполняем и выводим map со стандартным аллокатором
    {
       auto std_map = std::map<int, int, std::less<int>>{};
@@ -55,6 +57,6 @@ int main() {
          << std::endl;
       
       // Попытка добавить 11 элемент в контейнер
-      cust_map[10] = factorial(10);
+      cust_map[N] = factorial(N);
    }
 }
