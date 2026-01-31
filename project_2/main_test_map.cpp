@@ -1,13 +1,10 @@
-#include <chrono>
 #include <utility>
 #include <iostream>
 #include <map>
 #include <format>
-#include "cust_alloc.hpp"
+#include "stateful_alloc.hpp"
 
-// Мксимальное количество элементов в контейнере
-constexpr std::size_t N = 10;
-
+// Вычисление факториала
 int factorial(int n) {
    int result{1};
    for (int i{2}; i <= n; ++i) {
@@ -17,46 +14,109 @@ int factorial(int n) {
 }
 
 int main() {
-   using namespace std::chrono;
-   
+      
    // Заполняем и выводим map со стандартным аллокатором
    {
       auto std_map = std::map<int, int, std::less<int>>{};
-      auto pre = high_resolution_clock::now();
-      for (int i = 0; i <= 9; ++i) {
+      for (int i = 0; i < 10; ++i) {
          std_map[i] = factorial(i);
       }
-      auto post = high_resolution_clock::now();
-      auto lead_time = post - pre;
       // Вывод контейнера на печать
       for (const auto& pair : std_map) {
          std::cout << std::format("{} {}\n", pair.first, pair.second);
       }
-      std::cout << "Lead time is "
-         << duration_cast<microseconds>(lead_time).count()
-         << std::endl;
    }
 
    // Заполняем и выводим map с кастомным аллокатором
    {
       std::cout << std::endl;
-      using CustomAllocator = CustAllocator<std::pair<const int, int>, N>;
+      using CustomAllocator = StatefulAllocator<std::pair<const int, int>, 10>;
       std::map<int, int, std::less<int>, CustomAllocator> cust_map;
-      auto pre = high_resolution_clock::now();
       for (int i = 0; i <= 9; ++i) {
          cust_map[i] = factorial(i);
       }
-      auto post = high_resolution_clock::now();
-      auto lead_time = post - pre;
       // Вывод контейнера на печать
       for (const auto& pair : cust_map) {
          std::cout << std::format("{} {}\n", pair.first, pair.second);
       }
-      std::cout << "Lead time is " 
-         << duration_cast<microseconds>(lead_time).count()
-         << std::endl;
-      
-      // Попытка добавить 11 элемент в контейнер
-      cust_map[N] = factorial(N);
+   }
+
+   // Тестируем копирование (оба контейнера используют один пул памяти)
+   {
+      std::cout << std::endl;
+      using CustomAllocator = StatefulAllocator<std::pair<const int, int>, 10>;
+      std::map<int, int, std::less<int>, CustomAllocator> cust_map;
+      for (int i{}; i <= 4; ++i) {
+         cust_map[i] = factorial(i);
+      }
+      // Вывод контейнера на экран
+      std::cout << "Оригинал:\n";
+      for (const auto& pair : cust_map) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+      // Создаём копию в том же пуле памяти
+      auto copy_map(cust_map);
+      // Вывод контейнера на экран
+      std::cout << "Копия:\n";
+      for (const auto& pair : copy_map) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+   }
+
+   // Тестируем перемещение
+   {
+      std::cout << std::endl;
+      using Allocator = StatefulAllocator<std::pair<const int, int>, 12>;
+      std::map<int, int, std::less<int>, Allocator> cust_map;
+      for (int i{}; i < 12; ++i) {
+         cust_map[i] = factorial(i);
+      }
+      // Вывод на экран
+      std::cout << "оригинал:\n";
+      for (const auto& pair : cust_map) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+
+      std::map<int, int, std::less<int>, Allocator> move_map;
+      move_map = std::move(cust_map);
+      // Вывод на экран
+      std::cout << "Копия:\n";
+      for (const auto& pair : move_map) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+      std::cout << "Ёмкость оригинала: " << cust_map.size() << std::endl;
+   }
+
+   // тестирование операции swap
+   {
+      std::cout << std::endl;
+      using Allocator = StatefulAllocator<std::pair<const int, int>, 10>;
+      std::map<int, int, std::less<int>, Allocator> map_1;
+      for (int i{}; i < 5; ++i) {
+         map_1[i] = factorial(i);
+      }
+      std::cout << "map_1:\n";
+      for (const auto& pair : map_1) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+      std::map<int, int, std::less<int>, Allocator> map_2;
+      for (int i{5}; i < 10; ++i) {
+         map_2[i] = factorial(i);
+      }
+      std::cout << "map_2:\n";
+      for (const auto& pair : map_2) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+      // swap
+      map_1.swap(map_2);
+      std::cout << "После swap:\n";
+      std::cout << "map_1:\n";
+      for (const auto& pair : map_1) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
+      std::cout << "map_2:\n";
+      for (const auto& pair : map_2) {
+         std::cout << std::format("{} {}\n", pair.first, pair.second);
+      }
    }
 }
